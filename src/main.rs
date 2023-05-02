@@ -2,7 +2,6 @@ use std::f32;
 use std::time::Instant;
 
 use eyre::Result;
-use fluidsim::fluid::Cell;
 use fluidsim::{
     fluid::Fluid,
     renderer::{FluidTexture, Renderer},

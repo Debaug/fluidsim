@@ -43,7 +43,7 @@ impl FluidTexture {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            format: TextureFormat::R32Float,
+            format: TextureFormat::R8Unorm,
             usage: TextureUsages::COPY_DST | TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
         });
@@ -80,7 +80,7 @@ impl FluidTexture {
             .cells
             .axis_iter(Axis(1))
             .flatten()
-            .map(|cell| cell.density)
+            .map(|cell| (cell.density.clamp(0.0, 1.0) * u8::MAX as f32) as u8)
             .collect();
 
         renderer.queue.write_texture(
@@ -93,7 +93,7 @@ impl FluidTexture {
             bytemuck::cast_slice(&densities),
             ImageDataLayout {
                 offset: 0,
-                bytes_per_row: Some(4 * self.fluid.size as u32),
+                bytes_per_row: Some((mem::size_of::<u8>() * self.fluid.size) as u32),
                 rows_per_image: Some(self.fluid.size as u32),
             },
             Extent3d {
@@ -134,7 +134,7 @@ impl Renderer {
         surface.configure(&device, &surface_config);
 
         let sampler = device.create_sampler(&SamplerDescriptor {
-            mag_filter: wgpu::FilterMode::Nearest,
+            mag_filter: wgpu::FilterMode::Linear,
             min_filter: wgpu::FilterMode::Nearest,
             ..Default::default()
         });
@@ -146,7 +146,7 @@ impl Renderer {
                     binding: 0,
                     visibility: ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
                         view_dimension: wgpu::TextureViewDimension::D2,
                         multisampled: false,
                     },
@@ -155,7 +155,7 @@ impl Renderer {
                 BindGroupLayoutEntry {
                     binding: 1,
                     visibility: ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::NonFiltering),
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                     count: None,
                 },
             ],
