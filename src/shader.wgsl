@@ -18,7 +18,7 @@ fn vs_main(@location(0) position: vec2<f32>) -> Fragment {
 
 @fragment
 fn fs_main(fragment: Fragment) -> @location(0) vec4<f32> {
-    let density = clamp(textureSample(fluid_texture, fluid_sampler, fragment.tex_coords).x, 0.0, 1.0);
+    let density = textureSample(fluid_texture, fluid_sampler, fragment.tex_coords).x;
     let color = pow(density, 2.2);
     return vec4(color, color, color, 1.0);
 }

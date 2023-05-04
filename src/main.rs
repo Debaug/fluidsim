@@ -1,10 +1,11 @@
+use core::time;
 use std::f32;
 use std::time::Instant;
 
 use eyre::Result;
 use fluidsim::{
     fluid::Fluid,
-    renderer::{FluidTexture, Renderer},
+    renderer::{FluidTexture, Renderer}, timer::{Timer, FpsCounter},
 };
 use glam::Vec2;
 use winit::event::{ElementState, MouseButton};
@@ -32,15 +33,15 @@ async fn run() -> Result<()> {
 
     let mut fluid_texture = FluidTexture::new(fluid, &renderer);
 
-    let mut last_tick = Instant::now();
+    let mut timer = Timer::new();
+    let mut fps_counter = FpsCounter::new();
 
     let mut cursor_position = Vec2::ZERO;
     let mut cursor_velocity = Vec2::ZERO;
     let mut button_pressed = false;
 
     event_loop.run(move |event, _, control| {
-        let now = Instant::now();
-        let delta = now - last_tick;
+        let delta = timer.delta();
 
         match event {
             Event::WindowEvent { event, .. } => match event {
@@ -59,7 +60,7 @@ async fn run() -> Result<()> {
                 _ => {}
             },
             Event::MainEventsCleared => {
-                last_tick = now;
+                timer.tick();
 
                 if button_pressed {
                     let cell_radius = (BRUSH_RADIUS * RESOLUTION as f32 / 2.0).ceil() as isize;
@@ -84,6 +85,9 @@ async fn run() -> Result<()> {
                 if let Err(err) = renderer.render(&fluid_texture) {
                     eprintln!("{err}");
                 }
+
+                fps_counter.add_frame();
+                println!("{} FPS", fps_counter.fps());
             }
             _ => {}
         }

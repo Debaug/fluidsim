@@ -80,7 +80,7 @@ impl FluidTexture {
             .cells
             .axis_iter(Axis(1))
             .flatten()
-            .map(|cell| (cell.density.clamp(0.0, 1.0) * u8::MAX as f32) as u8)
+            .map(|cell| (cell.density * u8::MAX as f32) as u8)
             .collect();
 
         renderer.queue.write_texture(
